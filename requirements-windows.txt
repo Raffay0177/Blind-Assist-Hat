@@ -1,0 +1,10 @@
+# Windows Development Requirements for Blind Assist Hat
+# This file EXCLUDES Raspberry Pi specific hardware libraries
+# (like RPi.GPIO and picamera2) and problematic audio libraries (playsound)
+# Use this for testing non-hardware code (like AI logic) on your PC.
+
+openai>=1.0.0
+gTTS>=2.3.2
+python-dotenv>=1.0.0
+numpy>=1.24.0
+Pillow>=10.0.0
