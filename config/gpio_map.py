@@ -1,0 +1,1 @@
+# Centralized GPIO pin constants

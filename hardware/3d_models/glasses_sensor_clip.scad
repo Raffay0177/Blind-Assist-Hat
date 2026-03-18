@@ -1,0 +1,1 @@
+// OpenSCAD: glasses sensor clip
