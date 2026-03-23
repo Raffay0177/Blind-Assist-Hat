@@ -2,41 +2,93 @@
 
 Welcome to the **Blind Assist Hat** project! This project aims to create an affordable, smart wearable device designed to help visually impaired individuals navigate their surroundings, read text, and understand the environment around them.
 
-## 🌟 What Does It Do?
-
-The Blind Assist Hat uses a combination of sensors, a camera, and Artificial Intelligence (AI) to act as a pair of "digital eyes" for the user. It is controlled using a simple 4-button wrist pad.
-
-Here are the main features:
-1. **Obstacle Detection:** Uses ultrasonic sensors (like bat sonar!) on the front, left, and right to gently warn the user if they are getting too close to a wall or object.
-2. **Scene Description:** At the press of a button, the AI will look through the camera and describe what is in front of the user (e.g., "There is a park bench and a tree ahead, and a clear path to the right.").
-3. **Text Reading:** Can read street signs, documents, or labels out loud.
-4. **Navigation Mode:** Gives turn-by-turn directional assistance.
-
-## 🛠️ How It Works (In Plain English)
-
-To make sense of the technical parts, here is a simple breakdown of the main components:
-
-1. **The 'Brain' (Raspberry Pi):** A small, credit-card sized computer that processes all the data.
-2. **The 'Eyes' (Camera & Sensors):** A camera takes pictures for the AI, while the ultrasonic sensors measure distance to physical objects.
-3. **The 'Voice' (Speakers/Headphones):** The system talks to the user using synthesized speech (Text-to-Speech).
-4. **The 'Remote' (Wrist Pad):** A small 4-button controller worn on the wrist lets the user easily tell the hat what to do without needing to see a screen.
-
-### The Wrist Buttons
-- **Button 1:** Describe the scene in front of me.
-- **Button 2:** Read any text or signs you currently see.
-- **Button 3:** Turn on/off Navigation mode.
-- **Button 4:** Repeat the last thing you said.
+The system uses a combination of ultrasonic sensors, a Raspberry Pi Camera, and OpenAI's GPT-4o Vision API to act as a pair of "digital eyes," controlled entirely via a tactile 4-button wrist pad.
 
 ---
 
-## 🚀 Getting Started for the Technical Team
+## 🌟 Key Features
 
-If you are a builder or technician setting this up, please follow the steps below. Other team members can skip this part!
+1. **Obstacle Detection:** Ultrasonic sensors on the front, left, and right gently warn the user via dynamic audio beeps if they are getting too close to an object.
+2. **Scene Description:** The AI looks through the camera and verbally describes what is in front of the user (e.g., *"There is a park bench and a tree ahead."*).
+3. **Text Reading:** Identifies and reads street signs, documents, or labels out loud.
+4. **Navigation Mode:** Toggles continuous proximity sensing.
 
-1. Copy the `.env.example` file to a new file named `.env`.
-2. Open `.env` and paste in your AI API keys (like your OpenAI or Gemini key).
-3. To install all the required software on the Raspberry Pi "Brain", run the installation script in the terminal:
-   ```bash
-   ./install.sh
-   ```
-4. Check the `hardware/schematics/` folder for easy-to-read, visual wiring guides.
+---
+
+## 🛠️ System Architecture
+
+### 1. The 'Brain' (Raspberry Pi)
+A Raspberry Pi acts as the central hub, processing all hardware interrupts and routing API calls.
+
+### 2. The 'Eyes' (Sensors & Camera)
+- **Camera (CSI Port):** Captures high-res frames for the Vision AI.
+- **Ultrasonics (HC-SR04):** Measures physical distances. *(Warning: Requires a voltage divider for the Echo pins to protect the Pi's 3.3V GPIO).*
+
+### 3. The 'Remote' (Wrist Pad)
+A 4-button tactile interface worn on the wrist:
+- **Button 1:** Describe the scene.
+- **Button 2:** Read text/signs.
+- **Button 3:** Toggle Navigation Mode (Ultrasonic warnings).
+- **Button 4:** Repeat the last spoken output.
+
+### 4. The 'Voice' (Speaker)
+Native synthesized speech (Text-to-Speech) pushed directly through the Pi's 3.5mm Jack or HDMI port. No external buzzer required!
+
+---
+
+## 📁 Project Structure
+
+```text
+BDH/
+├── ai/                 # OpenAI Vision API routing and TTS handlers
+├── config/             # Centralized settings and GPIO pin mappings
+├── core/               # Main application loop, state handling, and button dispatchers
+├── hardware/           # Hardware schematics, 3D printable STL/SCAD models
+├── input/              # GPIO button interrupt logic
+├── sensors/            # Ultrasonic distance algorithms and picamera2 wrappers
+├── tests/              # End-to-end workflow suite for PC testing
+├── .env.example        # Environment variable template
+├── install.sh          # One-shot Raspberry Pi setup script
+└── requirements.txt    # Current Python dependencies
+```
+
+---
+
+## 🚀 Getting Started
+
+If you are a builder or technician setting this up on a Raspberry Pi, follow these steps:
+
+### 1. Hardware Assembly
+Before booting, refer to the wiring guides in the `hardware/schematics/` folder. 
+> **Important:** Follow `hardware/schematics/gpio_wiring.md` closely to ensure you don't fry your Raspberry Pi using the 5V ultrasonic sensors!
+
+### 2. Software Installation
+Run the one-shot setup script to install all system dependencies (like `espeak` and `libcamera`) and generate the Python virtual environment:
+```bash
+bash install.sh
+```
+
+### 3. Configuration
+Copy the provided `.env.example` file to `.env`:
+```bash
+cp .env.example .env
+```
+Open `.env` and configure your API keys:
+```env
+OPENAI_API_KEY=sk-your-openai-api-key-here
+OBSTACLE_WARN_DISTANCE_CM=100
+```
+*(You can also adjust the max warning distance for ultrasonic navigation mode here).*
+
+### 4. Running the System
+Activate your environment and start the core loop:
+```bash
+source venv/bin/activate
+python -m core.main
+```
+
+---
+
+## 💻 Cross-Platform Testing (Windows/Mac)
+Don't have a Raspberry Pi handy? The codebase is designed to safely degrade when missing physical hardware.
+You can run `python tests/test_end_to_end.py` on your Windows/Mac PC to simulate button presses and test the flow logs!

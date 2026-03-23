@@ -1,32 +1,55 @@
-# 🔌 General Wiring Guide (Sensors & Buttons)
+# Complete Hardware Connection Guide (Raspberry Pi)
 
-This guide explains how the different physical parts of the hat connect to the "Brain" (the Raspberry Pi). Don't worry if you're new to hardware; we'll keep it simple!
+This document details the exact hardware connections required for the **Blind Assist Hat** system based on the current codebase configuration (`config/gpio_map.py`).
 
-## What is a GPIO Pin?
-A **GPIO pin** is just a tiny metal spike on the Raspberry Pi where we can plug in a wire. 
-- Some pins send electricity (Power).
-- Some connect to ground (GND - necessary to complete the electrical loop).
-- Others send or receive data from our sensors.
+## ⚠️ Important Note on Ultrasonic Sensors (HC-SR04)
+The **HC-SR04** ultrasonic sensors require 5V for power (VCC). However, the Raspberry Pi's GPIO pins operate at 3.3V and are **not** 5V tolerant.
+- **Trig Pins**: Can be connected directly to the Pi's GPIO (the 3.3V out is enough to trigger the sensor).
+- **Echo Pins**: MUST use a voltage divider (e.g., a 1kΩ and 2kΩ resistor) to step the 5V return signal down to 3.3V before connecting to the Pi's GPIO. Connecting the 5V Echo pin directly will damage your Raspberry Pi.
 
-## 🦇 Ultrasonic Sensors (Distance Sensors)
-We have three of these to detect objects. They work like bat echolocation! Each sensor has a **Trigger** (sends out a sound wave) and an **Echo** (listens for the sound to bounce back from an object).
+---
 
-| Sensor Location | Trigger Pin | Echo Pin | What it does |
-|-----------------|-------------|----------|--------------|
-| **Front Sensor**| Pin 23      | Pin 24   | Detects objects straight ahead |
-| **Left Sensor** | Pin 17      | Pin 27   | Detects objects entering from the left |
-| **Right Sensor**| Pin 5       | Pin 6    | Detects objects entering from the right |
+## 1. Ultrasonic Sensors (3x HC-SR04)
+All sensors must share a common Ground (GND) with the Raspberry Pi.
 
-*(Note: These 5V sensors need a "Voltage Divider" to safely connect their Echo pins to our 3.3V Raspberry Pi. See `voltage_divider.md` for a simple explanation!)*
+| Sensor Position | Component Pin | Raspberry Pi Connection | Code Constant |
+| :--- | :--- | :--- | :--- |
+| **Front** | VCC | 5V Power Pin (e.g., Pin 2 or 4) | - |
+| **Front** | GND | Any Ground Pin (e.g., Pin 6) | - |
+| **Front** | Trig | **GPIO 23** (Pin 16) | `US_FRONT_TRIG` |
+| **Front** | Echo | **GPIO 24** (Pin 18) *(via Voltage Divider)* | `US_FRONT_ECHO` |
+| | | | |
+| **Left** | VCC | 5V Power Pin | - |
+| **Left** | GND | Any Ground Pin | - |
+| **Left** | Trig | **GPIO 17** (Pin 11) | `US_LEFT_TRIG` |
+| **Left** | Echo | **GPIO 27** (Pin 13) *(via Voltage Divider)* | `US_LEFT_ECHO` |
+| | | | |
+| **Right** | VCC | 5V Power Pin | - |
+| **Right** | GND | Any Ground Pin | - |
+| **Right** | Trig | **GPIO 5** (Pin 29) | `US_RIGHT_TRIG` |
+| **Right** | Echo | **GPIO 6** (Pin 31) *(via Voltage Divider)* | `US_RIGHT_ECHO` |
 
-## 🎛️ Wrist Button Pad
-The wrist pad has four buttons. When clicked, they send a tiny signal to a specific pin so the computer knows what the user wants to do.
+---
 
-| Button | Pin connected | What it tells the system to do |
-|--------|---------------|--------------------------------|
-| **Button 1** | Pin 16  | "Describe the scene!" |
-| **Button 2** | Pin 20  | "Read text or signs!" |
-| **Button 3** | Pin 21  | "Toggle Navigation mode!" |
-| **Button 4** | Pin 12  | "Repeat your last message!" |
+## 2. Wrist Button Pad (4x Push Buttons)
+The code utilizes the Raspberry Pi's internal pull-up resistors (`GPIO.PUD_UP`). Therefore, one side of each button connects to the designated GPIO pin, and the other side connects to a common Ground (GND). When pressed, the button bridges the connection to GND, triggering the action.
 
-**Golden Rule:** Always ensure the device is completely powered OFF before plugging or unplugging any wires!
+| Button Function | Component Pin 1 | Component Pin 2 | Code Constant |
+| :--- | :--- | :--- | :--- |
+| **B1: Describe Scene** | **GPIO 16** (Pin 36) | Ground (GND) | `BTN_1_SCENE` |
+| **B2: Read Text** | **GPIO 20** (Pin 38) | Ground (GND) | `BTN_2_TEXT` |
+| **B3: Toggle Nav Mode** | **GPIO 21** (Pin 40) | Ground (GND) | `BTN_3_NAV` |
+| **B4: Repeat Last** | **GPIO 12** (Pin 32) | Ground (GND) | `BTN_4_REPEAT` |
+
+---
+
+## 3. Audio / Speaker Output
+The software synthesizes and outputs audio natively (either via `eSpeak` for TTS or `pyaudio` for navigation alert tones). Hardware buzzers are not required.
+- **Connection**: Plug any standard speaker or headphones into the Raspberry Pi's **3.5mm Audio Jack**. 
+- Alternatively, if using an HDMI display with speakers, the audio can be routed through the **HDMI port**.
+
+---
+
+## 4. Camera Module
+The vision features rely on a standard Raspberry Pi Camera Module.
+- **Connection**: Connect the camera's ribbon cable directly into the **CSI Camera Port** located on the Raspberry Pi board. Ensure the silver contacts on the ribbon cable face the correct direction (typically away from the Ethernet/USB block).
