@@ -34,8 +34,9 @@ def capture_image(filename="capture.jpg"):
         try:
             print("📸 [USB CAMERA] Using fswebcam to capture.")
             # -r 1280x720: resolution
+            # -S 20: Skip 20 frames to let exposure settle (crucial for USB webcams)
             # --no-banner: hides timestamp banner
-            subprocess.run(["fswebcam", "-r", "1280x720", "--no-banner", filepath], check=True, capture_output=True)
+            subprocess.run(["fswebcam", "-r", "1280x720", "-S", "20", "--no-banner", filepath], check=True, capture_output=True)
             return filepath
         except Exception as e:
             print(f"DEBUG: USB Camera (fswebcam) failed: {e}")

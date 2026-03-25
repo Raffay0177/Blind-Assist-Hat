@@ -50,4 +50,4 @@ def describe_scene():
     return analyze_image("Describe exactly what is straight ahead in this scene. Be brief, focusing only on immediate obstacles, objects, and people.")
 
 def read_text():
-    return analyze_image("Identify and read aloud any prominent text, signs, or labels in this image. Only output the exact text found, or say 'No text detected' if none is found.")
+    return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.")
