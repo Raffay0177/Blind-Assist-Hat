@@ -50,9 +50,26 @@ def main():
         print("HINT: You can inject mocked hardware traces via unit tests to test functionality end-to-end.")
         
     try:
+        print("\n[KEYBOARD MODE] You can also type 1, 2, 3, or 4 and press Enter to trigger features.")
         while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
+            user_input = input("Enter Command (1-4, or 'q' to quit): ").strip()
+            
+            if user_input == '1':
+                handle_button_press(BTN_1_SCENE)
+            elif user_input == '2':
+                handle_button_press(BTN_2_TEXT)
+            elif user_input == '3':
+                handle_button_press(BTN_3_NAV)
+            elif user_input == '4':
+                handle_button_press(BTN_4_REPEAT)
+            elif user_input.lower() == 'q':
+                break
+            else:
+                if user_input:
+                    print("Invalid input. Use 1, 2, 3, 4, or q.")
+            
+            time.sleep(0.1)
+    except (KeyboardInterrupt, EOFError):
         print("\nShutting down system...")
         nav_destroy()
         if hardware_available:
