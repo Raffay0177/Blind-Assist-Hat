@@ -5,7 +5,7 @@ echo "Setting up Blind Assist Hat dependencies..."
 
 # System dependencies
 sudo apt-get update
-sudo apt-get install -y espeak python3-pip python3-venv sox libportaudio2
+sudo apt-get install -y espeak python3-pip python3-venv sox libportaudio2 fswebcam
 
 # Create virtual environment
 python3 -m venv venv
