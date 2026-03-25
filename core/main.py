@@ -24,6 +24,8 @@ def main():
     print("Initializing Blind Assist Hat core system...")
     
     if hardware_available:
+        GPIO.setwarnings(False)
+        GPIO.cleanup() # Reset any pins leftover from an old crash
         GPIO.setmode(GPIO.BCM)
     else:
         print("Running in MOCK mode.")
@@ -32,7 +34,10 @@ def main():
     nav_setup()
     
     # 2. Setup Buttons
-    setup_buttons(handle_button_press)
+    try:
+        setup_buttons(handle_button_press)
+    except Exception as e:
+        print(f"WARN: Could not setup buttons: {e}")
     
     # 3. Start Navigation Thread
     # The navigation loop runs infinitely, but inside it respects state.nav_mode_active

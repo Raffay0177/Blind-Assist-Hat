@@ -12,6 +12,9 @@ def setup_buttons(callback_fn):
         # Use internal pull-up resistors; buttons should connect pin to GND
         GPIO.setup(btn, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         # Bouncetime prevents double-triggers from noisy button contacts
-        GPIO.add_event_detect(btn, GPIO.FALLING, 
-                              callback=lambda channel, b=btn: callback_fn(b), 
-                              bouncetime=300)
+        try:
+            GPIO.add_event_detect(btn, GPIO.FALLING, 
+                                  callback=lambda channel, b=btn: callback_fn(b), 
+                                  bouncetime=300)
+        except RuntimeError as e:
+            print(f"DEBUG: Could not add edge detection for pin {btn}: {e}")
