@@ -14,12 +14,12 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def analyze_image(prompt_text):
+def analyze_image(prompt_text, filename="capture.jpg"):
     """ Captures a frame and evaluates it against GPT-4 Vision """
     if not client:
         return f"Placeholder response for: {prompt_text}. OpenAI API key not configured yet."
         
-    img_path = capture_image()
+    img_path = capture_image(filename)
     if not img_path:
         return "Failed to capture image from camera."
         
@@ -50,4 +50,8 @@ def describe_scene():
     return analyze_image("Describe exactly what is straight ahead in this scene. Be brief, focusing only on immediate obstacles, objects, and people.")
 
 def read_text():
-    return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.")
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"captures/text_{timestamp}.jpg"
+    print(f"DEBUG: Saving OCR capture to {filename}")
+    return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.", filename=filename)

@@ -14,7 +14,11 @@ def capture_image(filename="capture.jpg"):
     Captures an image using the available camera hardware.
     Prioritizes CSI Camera (Picamera2), falls back to USB Camera (fswebcam).
     """
+    # Create absolute path relative to project root
     filepath = os.path.join(os.path.dirname(__file__), "..", filename)
+    
+    # Ensure the target directory exists
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
     
     # --- Try CSI Camera (Picamera2) ---
     if csi_available:
