@@ -6,3 +6,5 @@ numpy>=1.24.0
 Pillow>=10.0.0
 SpeechRecognition>=3.10.0
 PyAudio>=0.2.13
+gpiozero>=2.0.0
+rpi-lgpio>=0.2
