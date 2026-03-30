@@ -22,7 +22,10 @@ def handle_button_press(channel):
     elif channel == BTN_3_NAV:
         print("\n[Button 3] Navigation Mode toggled.")
         is_active = state.toggle_nav_mode()
-        msg = "Navigation mode activated." if is_active else "Navigation mode deactivated."
+        if is_active:
+            msg = "Sonar navigation systems online. Obstacle detection engaged."
+        else:
+            msg = "Navigation mode offline. Returning to standby."
         print(msg)
         speak(msg)
         
