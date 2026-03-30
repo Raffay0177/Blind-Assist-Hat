@@ -1,16 +1,18 @@
 """
 test_buttons.py
 A simple script to test if the physical buttons are communicating with the Raspberry Pi.
+Uses gpiozero, which is the modern standard for Raspberry Pi hardware control.
 Run: python3 test_buttons.py
 """
 
-import time
 import sys
 
 try:
-    import RPi.GPIO as GPIO
+    from gpiozero import Button
+    from signal import pause
 except ImportError:
-    print("[ERROR] RPi.GPIO not installed. This script must be run on a Raspberry Pi.")
+    print("[ERROR] gpiozero not installed. This script must be run on a Raspberry Pi.")
+    print("        You can install it with: sudo apt install python3-gpiozero")
     sys.exit(1)
 
 # Hardcoded pin mappings for easy testing and modification
@@ -19,72 +21,49 @@ BTN_2_TEXT = 20
 BTN_3_NAV = 21
 BTN_4_REPEAT = 12
 
-def button_callback(channel):
-    """Callback function triggered on button press."""
-    button_name = "Unknown"
-    if channel == BTN_1_SCENE:
-        button_name = "Button 1 (Describe Scene)"
-    elif channel == BTN_2_TEXT:
-        button_name = "Button 2 (Read Text)"
-    elif channel == BTN_3_NAV:
-        button_name = "Button 3 (Toggle Nav Mode)"
-    elif channel == BTN_4_REPEAT:
-        button_name = "Button 4 (Repeat Last)"
-    
-    print(f"\n[OK] Detected Press on {button_name} (GPIO {channel})")
+def on_button_1_pressed():
+    print("\n[OK] Detected Press on Button 1 (Describe Scene) (GPIO 16)")
+
+def on_button_2_pressed():
+    print("\n[OK] Detected Press on Button 2 (Read Text) (GPIO 20)")
+
+def on_button_3_pressed():
+    print("\n[OK] Detected Press on Button 3 (Toggle Nav Mode) (GPIO 21)")
+
+def on_button_4_pressed():
+    print("\n[OK] Detected Press on Button 4 (Repeat Last) (GPIO 12)")
 
 def main():
     print("=" * 50)
-    print("  Blind Assist Hat – Button Communication Test")
+    print("  Blind Assist Hat – GPIOZero Button Test")
     print("=" * 50)
-    print("This script will help you verify if your buttons are wired correctly.")
+    print("This script uses 'gpiozero' to verify if your buttons are wired correctly.")
     print("Press Ctrl+C to exit.\n")
 
-    # Set up GPIO mode
-    GPIO.setmode(GPIO.BCM)
+    # gpiozero automatically handles debouncing (bounce_time) and internal pull-ups!
+    # By default, Button assumes the button connects to GND (pull_up=True).
+    print("Initializing GPIO 16...")
+    btn1 = Button(BTN_1_SCENE, bounce_time=0.1)
+    btn1.when_pressed = on_button_1_pressed
     
-    buttons = [BTN_1_SCENE, BTN_2_TEXT, BTN_3_NAV, BTN_4_REPEAT]
+    print("Initializing GPIO 20...")
+    btn2 = Button(BTN_2_TEXT, bounce_time=0.1)
+    btn2.when_pressed = on_button_2_pressed
     
-    polling_mode = False
-    for btn in buttons:
-        print(f"Initializing GPIO {btn}...")
-        GPIO.setup(btn, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        
-        try:
-            GPIO.add_event_detect(btn, GPIO.FALLING, callback=button_callback, bouncetime=300)
-        except RuntimeError as e:
-            print(f"  [WARN] Edge detection failed for GPIO {btn}: {e}")
-            polling_mode = True
-            
-    if polling_mode:
-        print("\n[INFO] Edge detection failed (likely running on Bookworm). Falling back to basic polling mode.")
-        print("Ready! Press any button on the wrist pad now...")
-        
-        last_state = {btn: GPIO.HIGH for btn in buttons}
-        try:
-            while True:
-                for btn in buttons:
-                    current_state = GPIO.input(btn)
-                    if current_state == GPIO.LOW and last_state[btn] == GPIO.HIGH: # Falling edge
-                        button_callback(btn)
-                    last_state[btn] = current_state
-                time.sleep(0.05) # Prevent 100% CPU usage
-        except KeyboardInterrupt:
-            print("\nExiting test...")
-        finally:
-            GPIO.cleanup()
-            print("GPIO cleaned up. Goodbye!")
-    else:
-        print("\nReady! Press any button on the wrist pad now...")
-        try:
-            while True:
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            print("\nExiting test...")
-        finally:
-            GPIO.cleanup()
-            print("GPIO cleaned up. Goodbye!")
+    print("Initializing GPIO 21...")
+    btn3 = Button(BTN_3_NAV, bounce_time=0.1)
+    btn3.when_pressed = on_button_3_pressed
+    
+    print("Initializing GPIO 12...")
+    btn4 = Button(BTN_4_REPEAT, bounce_time=0.1)
+    btn4.when_pressed = on_button_4_pressed
 
+    print("\nReady! Press any button on the wrist pad now...")
+    
+    try:
+        pause()  # This keeps the script running silently while waiting for interrupts
+    except KeyboardInterrupt:
+        print("\nExiting test. GPIO cleaned up automatically. Goodbye!")
 
 if __name__ == "__main__":
     main()
