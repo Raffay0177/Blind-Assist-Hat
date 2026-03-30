@@ -45,25 +45,46 @@ def main():
     
     buttons = [BTN_1_SCENE, BTN_2_TEXT, BTN_3_NAV, BTN_4_REPEAT]
     
+    polling_mode = False
     for btn in buttons:
         print(f"Initializing GPIO {btn}...")
-        # Buttons are wired to GND, so use internal PULL_UP
         GPIO.setup(btn, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         
-        # Add event detection for falling edge (button pressed)
-        # bouncetime prevents multiple triggers for a single press
-        GPIO.add_event_detect(btn, GPIO.FALLING, callback=button_callback, bouncetime=300)
+        try:
+            GPIO.add_event_detect(btn, GPIO.FALLING, callback=button_callback, bouncetime=300)
+        except RuntimeError as e:
+            print(f"  [WARN] Edge detection failed for GPIO {btn}: {e}")
+            polling_mode = True
+            
+    if polling_mode:
+        print("\n[INFO] Edge detection failed (likely running on Bookworm). Falling back to basic polling mode.")
+        print("Ready! Press any button on the wrist pad now...")
+        
+        last_state = {btn: GPIO.HIGH for btn in buttons}
+        try:
+            while True:
+                for btn in buttons:
+                    current_state = GPIO.input(btn)
+                    if current_state == GPIO.LOW and last_state[btn] == GPIO.HIGH: # Falling edge
+                        button_callback(btn)
+                    last_state[btn] = current_state
+                time.sleep(0.05) # Prevent 100% CPU usage
+        except KeyboardInterrupt:
+            print("\nExiting test...")
+        finally:
+            GPIO.cleanup()
+            print("GPIO cleaned up. Goodbye!")
+    else:
+        print("\nReady! Press any button on the wrist pad now...")
+        try:
+            while True:
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            print("\nExiting test...")
+        finally:
+            GPIO.cleanup()
+            print("GPIO cleaned up. Goodbye!")
 
-    print("\nReady! Press any button on the wrist pad now...")
-    
-    try:
-        while True:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("\nExiting test...")
-    finally:
-        GPIO.cleanup()
-        print("GPIO cleaned up. Goodbye!")
 
 if __name__ == "__main__":
     main()
