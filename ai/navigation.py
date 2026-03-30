@@ -81,6 +81,11 @@ def loop():
             time.sleep(0.5)
             continue
             
+        # Temporarily mute the sonar beeps if the system is currently talking
+        if state.is_speaking:
+            time.sleep(0.1)
+            continue
+            
         dis_front = distance(US_FRONT_TRIG, US_FRONT_ECHO)
         dis_left = distance(US_LEFT_TRIG, US_LEFT_ECHO)
         dis_right = distance(US_RIGHT_TRIG, US_RIGHT_ECHO)
