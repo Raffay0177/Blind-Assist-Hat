@@ -47,7 +47,14 @@ def analyze_image(prompt_text, filename="capture.jpg"):
         return f"OpenAI API Error: {str(e)}"
 
 def describe_scene():
-    return analyze_image("Describe exactly what is straight ahead in this scene. Be brief, focusing only on immediate obstacles, objects, and people.")
+    prompt = (
+        "You are a visual navigation assistant for a completely blind user wearing a chest-mounted camera. "
+        "Describe exactly what is straight ahead from their point of view. "
+        "Focus entirely on immediate physical obstacles, trip hazards, overhead dangers, and the general layout of the walking path. "
+        "Be extremely concise and precise. Explicitly flag any dangerous objects, sudden drops, or approaching people. "
+        "Do not describe background scenery or colors unless it is directly relevant to safety."
+    )
+    return analyze_image(prompt)
 
 def read_text():
     import datetime
