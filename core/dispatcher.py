@@ -5,6 +5,13 @@ from ai.tts import speak
 
 def handle_button_press(channel):
     """ Routes the button press to the corresponding module """
+    
+    # Block all other features if Navigation Mode is active
+    if state.nav_mode_active and channel != BTN_3_NAV:
+        print("\n[BLOCKED] User attempted to use another feature while Nav Mode is active.")
+        speak("Please exit navigation mode first.")
+        return
+
     if channel == BTN_1_SCENE:
         print("\n[Button 1] Describe Scene triggered.")
         speak("Looking straight ahead...")

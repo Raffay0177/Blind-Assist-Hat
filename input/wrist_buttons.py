@@ -21,7 +21,8 @@ def setup_buttons(callback_fn):
     for pin in pins:
         try:
             # Internal pull-up is True by default for Button, bounce_time handles debouncing
-            btn = Button(pin, bounce_time=0.2)
+            # Increased bounce_time to 0.5s to prevent accidental double-toggles on sensitive hardware buttons
+            btn = Button(pin, bounce_time=0.5)
             
             # gpiozero passes the button object to the callback if it takes an argument,
             # but we need to pass the PIN NUMBER explicitly to match the existing callback_fn interface.
