@@ -7,12 +7,14 @@ def handle_button_press(channel):
     """ Routes the button press to the corresponding module """
     if channel == BTN_1_SCENE:
         print("\n[Button 1] Describe Scene triggered.")
+        speak("Looking straight ahead...")
         text = describe_scene()
         state.set_last_output(text)
         speak(text)
         
     elif channel == BTN_2_TEXT:
         print("\n[Button 2] Read Text triggered.")
+        speak("Scanning for text...")
         text = read_text()
         state.set_last_output(text)
         speak(text)
