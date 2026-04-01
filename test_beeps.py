@@ -55,7 +55,7 @@ def simulate_distance(distance_cm, direction, label, steps=5):
     spoken = False
 
     for i in range(steps):
-        if distance_cm < OBSTACLE_WARN_DISTANCE_CM and not spoken:
+        if distance_cm < 40 and not spoken:
             print(f"  🔊 [Voice Cue]: '{direction}'", flush=True)
             spoken = True
             time.sleep(1.0) # simulate time taken to speak

@@ -109,13 +109,14 @@ def loop():
 
         if min_distance < OBSTACLE_WARN_DISTANCE_CM:
             current_time = time.time()
-            # Speak the direction aloud every 4 seconds to ensure the user knows without being overwhelmed
-            if current_time - last_spoken_time > 4.0 or direction != last_direction:
-                last_spoken_time = current_time
-                last_direction = direction
-                threading.Thread(target=speak, args=(f"{direction}",), daemon=True).start()
-                time.sleep(0.1) # Small delay to let the thread set state.is_speaking
-                continue
+            # Voice cue ONLY happens when the object gets really close (< 40 cm) to avoid constantly talking
+            if min_distance < 40:
+                if current_time - last_spoken_time > 4.0 or direction != last_direction:
+                    last_spoken_time = current_time
+                    last_direction = direction
+                    threading.Thread(target=speak, args=(f"{direction}",), daemon=True).start()
+                    time.sleep(0.1) # Small delay to let the thread set state.is_speaking
+                    continue
         
         # Set beep frequency based on direction: Low (Left), Mid (Front), High (Right)
         if direction == "Left": freq = 400
