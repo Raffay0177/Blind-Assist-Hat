@@ -38,26 +38,38 @@ def play_beep(duration_sec, frequency=800):
     stream.stop_stream()
     stream.close()
 
-def simulate_distance(distance_cm, label, steps=5):
+def simulate_distance(distance_cm, direction, label, steps=5):
     """
     Play beeps for a given simulated distance for a short demo period.
     Mirrors the exact logic from navigation.py loop().
     """
     print(f"\n{'─'*45}")
-    print(f"  Simulating: {label} ({distance_cm} cm)")
+    print(f"  Simulating {direction}: {label} ({distance_cm} cm)")
     print(f"{'─'*45}")
 
-    for _ in range(steps):
+    freq: int = 800
+    if direction == "Left": freq = 400
+    elif direction == "Front": freq = 800
+    elif direction == "Right": freq = 1200
+    
+    spoken = False
+
+    for i in range(steps):
+        if distance_cm < OBSTACLE_WARN_DISTANCE_CM and not spoken:
+            print(f"  🔊 [Voice Cue]: '{direction}'", flush=True)
+            spoken = True
+            time.sleep(1.0) # simulate time taken to speak
+            
         if distance_cm < 5:
-            # Very close: rapid continuous buzz
-            play_beep(0.5, 1000)
+            # Very close: rapid continuous buzz, slightly higher pitch
+            play_beep(0.5, freq + 200)
             print("  🚨 BUZZ!", flush=True)
             time.sleep(0.1)
         elif distance_cm < OBSTACLE_WARN_DISTANCE_CM:
             # Within warning zone: beep interval shrinks as distance shrinks
             beep_interval = max(0.1, (distance_cm - 5) / 50.0)
-            play_beep(0.2, 900)  # longer beep, slightly higher pitch
-            print(f"  🔔 BEEP  (next in {beep_interval:.1f}s)", flush=True)
+            play_beep(0.2, freq)  # longer beep for simulation
+            print(f"  🔔 BEEP ({freq}Hz) (next in {beep_interval:.1f}s)", flush=True)
             time.sleep(beep_interval)
         else:
             # Safe: silence
@@ -73,15 +85,15 @@ print("Listen carefully — this is what you'll hear")
 print("when obstacles are at different distances.\n")
 
 scenarios = [
-    (150, "Safe zone – no beep",          3),
-    (90,  "Far warning  (~90 cm)",         5),
-    (55,  "Medium warning (~55 cm)",       5),
-    (20,  "Close warning (~20 cm)",        5),
-    (3,   "DANGER – object < 5 cm buzz",  6),
+    (150, "Front", "Safe zone – no beep",          3),
+    (90,  "Left",  "Far warning  (~90 cm)",         4),
+    (55,  "Front", "Medium warning (~55 cm)",       4),
+    (20,  "Right", "Close warning (~20 cm)",        4),
+    (3,   "Front", "DANGER – object < 5 cm buzz",  5),
 ]
 
-for dist, label, steps in scenarios:
-    simulate_distance(dist, label, steps)
+for dist, cur_dir, label, steps in scenarios:
+    simulate_distance(dist, cur_dir, label, steps)
     time.sleep(0.5)  # brief pause between scenarios
 
 print("\n\n[OK] Simulation complete.")

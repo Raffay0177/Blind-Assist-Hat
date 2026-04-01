@@ -5,6 +5,8 @@ import pyaudio
 import numpy as np
 from core.state import state
 from config.settings import OBSTACLE_WARN_DISTANCE_CM
+import threading
+from ai.tts import speak
 
 from config.gpio_map import (
     US_FRONT_TRIG, US_FRONT_ECHO,
@@ -51,6 +53,9 @@ def distance(trig_pin, echo_pin):
 # PyAudio setup for speaker beep synthesis
 p = pyaudio.PyAudio()
 
+last_spoken_time = 0.0
+last_direction = ""
+
 def play_beep(duration_sec, frequency=800):
     """ Play a beep sound through the speaker using PyAudio """
     sample_rate = 44100
@@ -76,6 +81,8 @@ def play_beep(duration_sec, frequency=800):
 
 def loop():
     """ Main loop checking distances from all sensors and outputting to speaker """
+    global last_spoken_time, last_direction
+    
     while True:
         if not state.nav_mode_active:
             time.sleep(0.5)
@@ -100,14 +107,29 @@ def loop():
 
         print(f"Closest object: {min_distance:.1f} cm ({direction})")
 
+        if min_distance < OBSTACLE_WARN_DISTANCE_CM:
+            current_time = time.time()
+            # Speak the direction aloud every 4 seconds to ensure the user knows without being overwhelmed
+            if current_time - last_spoken_time > 4.0 or direction != last_direction:
+                last_spoken_time = current_time
+                last_direction = direction
+                threading.Thread(target=speak, args=(f"{direction}",), daemon=True).start()
+                time.sleep(0.1) # Small delay to let the thread set state.is_speaking
+                continue
+        
+        # Set beep frequency based on direction: Low (Left), Mid (Front), High (Right)
+        if direction == "Left": freq = 400
+        elif direction == "Front": freq = 800
+        else: freq = 1200
+
         if min_distance < 5:  
             # If the object is within 5 cm, output long continuous-like buzz
-            play_beep(0.5, 1000)
+            play_beep(0.5, freq + 200) # Slightly higher pitch for extreme close proximity
             time.sleep(0.1)
         elif min_distance < OBSTACLE_WARN_DISTANCE_CM:  
             # If within threshold, beep with decreasing interval
             beep_interval = (min_distance - 5) / 50.0  
-            play_beep(0.1, 800)
+            play_beep(0.1, freq)
             time.sleep(beep_interval)
         else:
             # Turn off speaker (just sleep)
