@@ -36,7 +36,7 @@ def analyze_image(prompt_text, filename="captures/capture.jpg"):
               "role": "user",
               "content": [
                 {"type": "text", "text": prompt_text},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
               ]
             }
           ],
@@ -52,11 +52,11 @@ def describe_scene():
     filename = f"captures/scene_{timestamp}.jpg"
     print(f"DEBUG: Saving Scene capture to {filename}")
     prompt = (
-        "You are a visual navigation assistant for a completely blind user wearing a chest-mounted camera. "
-        "Describe exactly what is straight ahead from their point of view. "
-        "Focus entirely on immediate physical obstacles, trip hazards, overhead dangers, and the general layout of the walking path. "
-        "Be extremely concise and precise. Explicitly flag any dangerous objects, sudden drops, or approaching people. "
-        "Do not describe background scenery or colors unless it is directly relevant to safety."
+        "You are an advanced visual assistant for a blind user. Analyze this image with high precision. "
+        "Provide a highly descriptive yet structured assessment of the scene. Prioritize safety, then context. "
+        "First, describe the immediate path and identify any obstacles, hazards, or approaching people using clock directions (e.g., 'table at 2 o'clock, 3 feet away'). "
+        "Second, describe the overall environment, the general layout of the room or area, and any significant objects (e.g., doors, windows, signs). "
+        "Be extremely descriptive, accurate, and paint a clear mental picture for the user while maintaining a natural, easy-to-hear conversational tone."
     )
     return analyze_image(prompt, filename=filename)
 
