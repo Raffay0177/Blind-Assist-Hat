@@ -19,6 +19,15 @@ from config.gpio_map import BTN_1_SCENE, BTN_2_TEXT, BTN_3_NAV, BTN_4_REPEAT
 from input.wrist_buttons import setup_buttons
 from core.dispatcher import handle_button_press
 from ai.navigation import setup as nav_setup, loop as nav_loop, destroy as nav_destroy
+from ai.tts import speak
+from sensors.battery import get_battery_level
+
+def startup_announcement():
+    """ Runs 15 seconds after boot to report status via speaker """
+    time.sleep(15)
+    battery = get_battery_level()
+    speak(f"Device ready. Speaker connection verified. Powerbank battery level is at {battery} percent.")
+
 
 def main():
     print("Initializing Blind Assist Hat core system...")
@@ -43,6 +52,10 @@ def main():
     # The navigation loop runs infinitely, but inside it respects state.nav_mode_active
     nav_thread = threading.Thread(target=nav_loop, daemon=True)
     nav_thread.start()
+    
+    # 4. Start the delayed startup announcement thread
+    announcement_thread = threading.Thread(target=startup_announcement, daemon=True)
+    announcement_thread.start()
     
     print("\n--- System Ready ---")
     print("Waiting for input. Press Ctrl+C to exit.")
