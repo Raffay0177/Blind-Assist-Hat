@@ -69,3 +69,15 @@ def read_text():
     filename = f"captures/text_{timestamp}.jpg"
     print(f"DEBUG: Saving OCR capture to {filename}")
     return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.", filename=filename, force_high_accuracy=True)
+
+def analyze_collision():
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"captures/collision_{timestamp}.jpg"
+    print(f"DEBUG: Saving Collision capture to {filename}")
+    prompt = (
+        "A blind user is about to collide with an object straight ahead. "
+        "Identify the object in 1-3 words, and give a very short instruction on how to avoid it. "
+        "Example: 'Trash can. Step left.'"
+    )
+    return analyze_image(prompt, filename=filename, force_high_accuracy=False)

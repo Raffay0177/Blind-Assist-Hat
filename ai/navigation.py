@@ -7,6 +7,7 @@ from core.state import state
 from config.settings import OBSTACLE_WARN_DISTANCE_CM
 import threading
 from ai.tts import speak
+from ai.vision import analyze_collision
 
 from config.gpio_map import (
     US_FRONT_TRIG, US_FRONT_ECHO,
@@ -55,6 +56,15 @@ p = pyaudio.PyAudio()
 
 last_spoken_time = 0.0
 last_direction = ""
+last_vision_warning_time = 0.0
+
+def collision_warning_routine():
+    """ Runs the vision analysis and speaks the result in the background """
+    state.is_processing = True
+    speak("Warning.")
+    instruction = analyze_collision()
+    speak(instruction)
+    state.is_processing = False
 
 def play_beep(duration_sec, frequency=800):
     """ Play a beep sound through the speaker using PyAudio """
@@ -81,7 +91,7 @@ def play_beep(duration_sec, frequency=800):
 
 def loop():
     """ Main loop checking distances from all sensors and outputting to speaker """
-    global last_spoken_time, last_direction
+    global last_spoken_time, last_direction, last_vision_warning_time
     
     while True:
         if not state.nav_mode_active:
@@ -111,11 +121,22 @@ def loop():
             current_time = time.time()
             # Voice cue ONLY happens when the object gets really close (< 40 cm) to avoid constantly talking
             if min_distance < 40:
+                # 1. Imminent Collision Vision Warning (Front only)
+                if direction == "Front" and current_time - last_vision_warning_time > 10.0 and not state.is_processing:
+                    last_vision_warning_time = current_time
+                    last_spoken_time = current_time
+                    last_direction = direction
+                    threading.Thread(target=collision_warning_routine, daemon=True).start()
+                    time.sleep(0.1)
+                    continue
+
+                # 2. Standard Directions Warning
                 if current_time - last_spoken_time > 4.0 or direction != last_direction:
                     last_spoken_time = current_time
                     last_direction = direction
-                    threading.Thread(target=speak, args=(f"{direction}",), daemon=True).start()
-                    time.sleep(0.1) # Small delay to let the thread set state.is_speaking
+                    if not state.is_processing:
+                        threading.Thread(target=speak, args=(f"{direction}",), daemon=True).start()
+                        time.sleep(0.1) # Small delay to let the thread set state.is_speaking
                     continue
         
         # Set beep frequency based on direction: Low (Left), Mid (Front), High (Right)
