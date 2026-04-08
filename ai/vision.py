@@ -52,10 +52,9 @@ def describe_scene():
     filename = f"captures/scene_{timestamp}.jpg"
     print(f"DEBUG: Saving Scene capture to {filename}")
     prompt = (
-        "Respond with MAXIMUM 15 words. DO NOT write a paragraph. "
-        "State ONLY the most immediate physical obstacle and its clock direction. "
-        "Example: 'Chair at 12 o'clock, 3 feet away.' "
-        "If the path is completely clear, say: 'Path is clear.'"
+        "You are assisting a blind person via audio. Describe what the camera sees in 1-2 short sentences. "
+        "Focus on: what objects are present, where they are, and any hazards or actions needed. "
+        "Be direct and specific. No visual fluff."
     )
     return analyze_image(prompt, filename=filename)
 
