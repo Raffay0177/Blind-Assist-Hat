@@ -1,3 +1,4 @@
+import threading
 from config.gpio_map import BTN_1_SCENE, BTN_2_TEXT, BTN_3_NAV, BTN_4_REPEAT
 from core.state import state
 from ai.vision import describe_scene, read_text
@@ -19,7 +20,7 @@ def handle_button_press(channel):
     if channel == BTN_1_SCENE:
         state.is_processing = True
         print("\n[Button 1] Describe Scene triggered.")
-        speak("Looking straight ahead...")
+        threading.Thread(target=speak, args=("Looking straight ahead...",), daemon=True).start()
         text = describe_scene()
         state.set_last_output(text)
         speak(text)
@@ -28,7 +29,7 @@ def handle_button_press(channel):
     elif channel == BTN_2_TEXT:
         state.is_processing = True
         print("\n[Button 2] Read Text triggered.")
-        speak("Scanning for text...")
+        threading.Thread(target=speak, args=("Scanning for text...",), daemon=True).start()
         text = read_text()
         state.set_last_output(text)
         speak(text)
