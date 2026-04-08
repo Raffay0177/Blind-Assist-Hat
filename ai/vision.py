@@ -14,7 +14,7 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def analyze_image(prompt_text, filename="captures/capture.jpg"):
+def analyze_image(prompt_text, filename="captures/capture.jpg", force_high_accuracy=False):
     """ Captures a frame and evaluates it against GPT-4 Vision """
     if not client:
         return f"Placeholder response for: {prompt_text}. OpenAI API key not configured yet."
@@ -29,14 +29,19 @@ def analyze_image(prompt_text, filename="captures/capture.jpg"):
     base64_image = encode_image(img_path)
     
     try:
+        model = "gpt-4o" if force_high_accuracy else "gpt-4o-mini"
+        image_payload = {"url": f"data:image/jpeg;base64,{base64_image}"}
+        if force_high_accuracy:
+            image_payload["detail"] = "high"
+
         response = client.chat.completions.create(
-          model="gpt-4o-mini",
+          model=model,
           messages=[
             {
               "role": "user",
               "content": [
                 {"type": "text", "text": prompt_text},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                {"type": "image_url", "image_url": image_payload}
               ]
             }
           ],
@@ -63,4 +68,4 @@ def read_text():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"captures/text_{timestamp}.jpg"
     print(f"DEBUG: Saving OCR capture to {filename}")
-    return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.", filename=filename)
+    return analyze_image("I am a vision assistant for the blind. Please identify any text, signs, labels, or handwriting in this image. Read the text exactly as it appears. If multiple blocks of text exist, read them all clearly. If no text is visible, say 'No text detected'.", filename=filename, force_high_accuracy=True)
