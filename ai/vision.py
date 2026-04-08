@@ -14,7 +14,7 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def analyze_image(prompt_text, filename="capture.jpg"):
+def analyze_image(prompt_text, filename="captures/capture.jpg"):
     """ Captures a frame and evaluates it against GPT-4 Vision """
     if not client:
         return f"Placeholder response for: {prompt_text}. OpenAI API key not configured yet."
@@ -47,6 +47,10 @@ def analyze_image(prompt_text, filename="capture.jpg"):
         return f"OpenAI API Error: {str(e)}"
 
 def describe_scene():
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"captures/scene_{timestamp}.jpg"
+    print(f"DEBUG: Saving Scene capture to {filename}")
     prompt = (
         "You are a visual navigation assistant for a completely blind user wearing a chest-mounted camera. "
         "Describe exactly what is straight ahead from their point of view. "
@@ -54,7 +58,7 @@ def describe_scene():
         "Be extremely concise and precise. Explicitly flag any dangerous objects, sudden drops, or approaching people. "
         "Do not describe background scenery or colors unless it is directly relevant to safety."
     )
-    return analyze_image(prompt)
+    return analyze_image(prompt, filename=filename)
 
 def read_text():
     import datetime
