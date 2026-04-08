@@ -52,11 +52,10 @@ def describe_scene():
     filename = f"captures/scene_{timestamp}.jpg"
     print(f"DEBUG: Saving Scene capture to {filename}")
     prompt = (
-        "You are an advanced visual assistant for a blind user. Analyze this image with high precision. "
-        "Provide a highly descriptive yet structured assessment of the scene. Prioritize safety, then context. "
-        "First, describe the immediate path and identify any obstacles, hazards, or approaching people using clock directions (e.g., 'table at 2 o'clock, 3 feet away'). "
-        "Second, describe the overall environment, the general layout of the room or area, and any significant objects (e.g., doors, windows, signs). "
-        "Be extremely descriptive, accurate, and paint a clear mental picture for the user while maintaining a natural, easy-to-hear conversational tone."
+        "You are a visual navigation assistant for a completely blind user. "
+        "Keep your response strictly to 1 or 2 short sentences. Be extremely practical and concise. "
+        "Quickly state the environment, then immediately identify any physical obstacles, trip hazards, or people directly in front of the user. "
+        "Use clock directions. Example: 'You are in a kitchen. There is a table directly ahead at 12 o'clock, 4 feet away.'"
     )
     return analyze_image(prompt, filename=filename)
 
