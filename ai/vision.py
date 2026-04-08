@@ -52,10 +52,10 @@ def describe_scene():
     filename = f"captures/scene_{timestamp}.jpg"
     print(f"DEBUG: Saving Scene capture to {filename}")
     prompt = (
-        "You are a visual navigation assistant for a completely blind user. "
-        "Keep your response strictly to 1 or 2 short sentences. Be extremely practical and concise. "
-        "Quickly state the environment, then immediately identify any physical obstacles, trip hazards, or people directly in front of the user. "
-        "Use clock directions. Example: 'You are in a kitchen. There is a table directly ahead at 12 o'clock, 4 feet away.'"
+        "Respond with MAXIMUM 15 words. DO NOT write a paragraph. "
+        "State ONLY the most immediate physical obstacle and its clock direction. "
+        "Example: 'Chair at 12 o'clock, 3 feet away.' "
+        "If the path is completely clear, say: 'Path is clear.'"
     )
     return analyze_image(prompt, filename=filename)
 
