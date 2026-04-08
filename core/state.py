@@ -3,6 +3,7 @@ class AppState:
         self.nav_mode_active = False
         self.last_output = ""
         self.is_speaking = False
+        self.is_processing = False
 
     def toggle_nav_mode(self):
         self.nav_mode_active = not self.nav_mode_active

@@ -6,6 +6,10 @@ from ai.tts import speak
 def handle_button_press(channel):
     """ Routes the button press to the corresponding module """
     
+    if state.is_processing:
+        print("\n[BLOCKED] Command ignored, system is already processing a request.")
+        return
+        
     # Block all other features if Navigation Mode is active
     if state.nav_mode_active and channel != BTN_3_NAV:
         print("\n[BLOCKED] User attempted to use another feature while Nav Mode is active.")
@@ -13,18 +17,22 @@ def handle_button_press(channel):
         return
 
     if channel == BTN_1_SCENE:
+        state.is_processing = True
         print("\n[Button 1] Describe Scene triggered.")
         speak("Looking straight ahead...")
         text = describe_scene()
         state.set_last_output(text)
         speak(text)
+        state.is_processing = False
         
     elif channel == BTN_2_TEXT:
+        state.is_processing = True
         print("\n[Button 2] Read Text triggered.")
         speak("Scanning for text...")
         text = read_text()
         state.set_last_output(text)
         speak(text)
+        state.is_processing = False
         
     elif channel == BTN_3_NAV:
         print("\n[Button 3] Navigation Mode toggled.")
