@@ -570,7 +570,7 @@ def setup_buttons(callback_fn):
 
     for pin in [BTN_1_SCENE, BTN_2_TEXT, BTN_3_NAV, BTN_4_REPEAT]:
         try:
-            btn = Button(pin, bounce_time=0.3)
+            btn = Button(pin, bounce_time=0.05)
             btn.when_pressed = lambda b=btn: callback_fn(b.pin.number)
             _buttons.append(btn)
             print(f"  ✓ Button registered on GPIO {pin}")
