@@ -1,10 +1,22 @@
-RPi.GPIO>=0.7.1
-picamera2>=0.3.12
+# Core AI & environment
 openai>=1.0.0
 python-dotenv>=1.0.0
-numpy>=1.24.0
-Pillow>=10.0.0
-SpeechRecognition>=3.10.0
-PyAudio>=0.2.13
+
+# Hardware (Raspberry Pi only — will gracefully fail on other platforms)
+RPi.GPIO>=0.7.1
 gpiozero>=2.0.0
 rpi-lgpio>=0.2
+
+# Camera — picamera2 is best installed via system packages on Pi
+# (install.sh uses --system-site-packages for this reason)
+# picamera2>=0.3.12   # <- uncomment only if not using system package
+
+# Audio
+PyAudio>=0.2.13
+numpy>=1.24.0
+
+# Vision
+Pillow>=10.0.0
+
+# Speech recognition (future feature)
+SpeechRecognition>=3.10.0
