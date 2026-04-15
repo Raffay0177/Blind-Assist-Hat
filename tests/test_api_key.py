@@ -43,11 +43,11 @@ try:
     )
     reply = response.choices[0].message.content.strip()
     print(f"[OK] API responded: {reply}")
-    print("\n✅ Your API key is valid and working!")
+    print("\n[SUCCESS] Your API key is valid and working!")
 
 except Exception as e:
     print(f"\n[ERROR] API call failed: {e}")
-    print("\n❌ Key is set but the request was rejected.")
+    print("\n[FAIL] Key is set but the request was rejected.")
     print("   Common causes:")
     print("   • Invalid / expired key")
     print("   • No billing set up on your OpenAI account")

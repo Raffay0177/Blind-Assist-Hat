@@ -7,4 +7,4 @@ source venv/bin/activate
 
 # Run the main program
 echo "Starting Blind Assist Hat..."
-python -m core.main
+python blind_assist.py
