@@ -36,13 +36,15 @@ TTS_MODEL     = os.getenv("TTS_MODEL",      "tts-1-hd")      # tts-1 or tts-1-hd
 
 # Navigation distance thresholds (cm)
 # HC-SR04 reliable range: ~2 cm – 400 cm
-ZONE_CRITICAL  = int(os.getenv("ZONE_CRITICAL_CM",  "50"))   # Imminent collision
-ZONE_DANGER    = int(os.getenv("ZONE_DANGER_CM",   "120"))   # Very close — act now
-ZONE_CAUTION   = int(os.getenv("ZONE_CAUTION_CM",  "200"))   # Approaching — heads up
-ZONE_AWARE     = int(os.getenv("ZONE_AWARE_CM",    "350"))   # Environmental awareness
+# Tuned for typical indoor room environments (tighter than outdoor defaults)
+ZONE_CRITICAL  = int(os.getenv("ZONE_CRITICAL_CM",  "40"))   # Imminent — stop now
+ZONE_DANGER    = int(os.getenv("ZONE_DANGER_CM",    "90"))   # Very close — act now
+ZONE_CAUTION   = int(os.getenv("ZONE_CAUTION_CM",  "160"))   # Approaching — heads up
+ZONE_AWARE     = int(os.getenv("ZONE_AWARE_CM",    "280"))   # Environmental awareness
 
 # Clear-path announcement cooldown (seconds)
-CLEAR_PATH_COOLDOWN = float(os.getenv("CLEAR_PATH_COOLDOWN", "8.0"))
+# Increased to avoid spamming "path is clear" in open spaces
+CLEAR_PATH_COOLDOWN = float(os.getenv("CLEAR_PATH_COOLDOWN", "12.0"))
 
 # ==========================================
 # OPENAI CLIENT
@@ -331,15 +333,25 @@ def _read_distance(trig_pin, echo_pin, timeout_s=0.04):
     except Exception:
         return 999.0
 
-def _read_distance_avg(trig_pin, echo_pin, samples=3):
-    """Average multiple readings to reduce sensor noise."""
+def _read_distance_avg(trig_pin, echo_pin, samples=5):
+    """
+    Average multiple readings to reduce sensor noise.
+    Uses median filtering — discards the highest outlier reading
+    before averaging, which helps reject false short-range spikes.
+    Increased to 5 samples for smoother, more reliable readings.
+    """
     readings = []
     for _ in range(samples):
         d = _read_distance(trig_pin, echo_pin)
         if d < 999.0:
             readings.append(d)
-        time.sleep(0.005)
-    return sum(readings) / len(readings) if readings else 999.0
+        time.sleep(0.008)  # slightly longer inter-sample delay for HC-SR04 stability
+    if not readings:
+        return 999.0
+    # Drop the single highest reading to filter out reflection spikes
+    if len(readings) > 2:
+        readings.remove(max(readings))
+    return sum(readings) / len(readings)
 
 def _zone_label(dist_cm):
     """Return a human-readable proximity zone for a distance."""
@@ -429,14 +441,16 @@ def _classify_scene(front, left, right):
     return (message if warnings else None), freq, min_dist
 
 def collision_warning_routine():
-    """Camera-based collision analysis triggered on imminent/critical front obstacle."""
+    """
+    Triggered on imminent/critical front obstacle.
+    AUTO SCENE DESCRIBE DISABLED — camera AI analysis removed because:
+      - It adds 1-3s latency at the worst possible moment
+      - The user needs an instant reaction, not a wait
+      - Use Button 1 manually to get a scene description instead
+    Now just fires an immediate urgent voice warning.
+    """
     state.is_processing = True
-    speak("Warning, obstacle ahead.")
-    try:
-        instruction = analyze_collision()
-        speak(instruction)
-    except Exception as e:
-        print(f"DEBUG: collision analysis failed: {e}")
+    speak("Stop! Obstacle directly ahead.")
     state.is_processing = False
 
 def nav_loop():
@@ -518,13 +532,14 @@ def nav_loop():
             overall_zone in ("danger", "critical")
         )
 
-        # Voice cooldowns by zone
+        # Voice cooldowns by zone (how many seconds to wait before repeating)
+        # Shorter = more frequent alerts; tuned so it's informative not annoying
         voice_cooldown = {
-            "critical": 3.0,
-            "danger":   4.0,
-            "caution":  6.0,
-            "aware":    999.0,   # beeps only for 'aware'
-        }.get(overall_zone, 5.0)
+            "critical": 2.5,    # repeat every 2.5s when about to hit something
+            "danger":   5.0,    # repeat every 5s when close
+            "caution":  8.0,    # repeat every 8s when approaching
+            "aware":    999.0,  # beeps only; no voice for far-awareness zone
+        }.get(overall_zone, 6.0)
 
         if voice_msg and not state.is_speaking:
             if direction_changed or zone_worsened or (now - _nav_last_spoken_time > voice_cooldown):
@@ -539,12 +554,12 @@ def nav_loop():
         _nav_last_zone      = overall_zone
 
         # ── BEEP FEEDBACK (rate scales with proximity) ─────────────────────────
-        # Beep interval: 0.1 s (critical) → 1.5 s (aware boundary)
-        # Linear mapping: distance [5 … ZONE_AWARE] → interval [0.1 … 1.5]
+        # Beep interval: 0.08 s (critical) → 1.2 s (aware boundary)
+        # Tightened upper bound for quicker awareness feedback indoors
         clamped = max(5.0, min(min_dist, float(ZONE_AWARE)))
         t_range  = float(ZONE_AWARE) - 5.0
-        beep_interval = 0.1 + (clamped - 5.0) / t_range * 1.4   # 0.1 → 1.5 s
-        beep_dur  = max(0.04, 0.15 - (clamped / float(ZONE_AWARE)) * 0.11)
+        beep_interval = 0.08 + (clamped - 5.0) / t_range * 1.12   # 0.08 → 1.2 s
+        beep_dur  = max(0.05, 0.18 - (clamped / float(ZONE_AWARE)) * 0.13)
 
         play_beep(beep_dur, beep_freq)
         time.sleep(beep_interval)
