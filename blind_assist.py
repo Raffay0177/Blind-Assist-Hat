@@ -302,55 +302,69 @@ def nav_setup():
         GPIO.setup(trig, GPIO.OUT)
         GPIO.setup(echo, GPIO.IN)
 
+# HC-SR04 physically cannot detect closer than ~2 cm.
+# Any reading below this is electrical noise — treat as invalid.
+_MIN_VALID_CM = 2.0
+
 def _read_distance(trig_pin, echo_pin, timeout_s=0.04):
     """
     Read distance from a single HC-SR04 sensor.
     Returns distance in centimetres, or 999 on timeout/error.
+
+    FIX: TRIG is held LOW for 5µs (not 2µs) before pulsing — this fully
+    resets the pin and prevents false triggers from residual charge.
     """
     try:
+        # Hold TRIG LOW long enough to clear any residual signal
         GPIO.output(trig_pin, 0)
-        time.sleep(0.000002)
+        time.sleep(0.000005)          # 5µs LOW — was 2µs, fixes false triggers
         GPIO.output(trig_pin, 1)
-        time.sleep(0.00001)
+        time.sleep(0.00001)           # 10µs HIGH pulse to trigger sensor
         GPIO.output(trig_pin, 0)
 
         deadline = time.time() + timeout_s
 
-        # Wait for ECHO to go HIGH
+        # Wait for ECHO to go HIGH (sensor detected pulse going out)
         while GPIO.input(echo_pin) == 0:
             if time.time() > deadline:
-                return 999.0
+                return 999.0          # timeout = nothing detected
         t_start = time.time()
 
-        # Wait for ECHO to go LOW
+        # Wait for ECHO to go LOW (reflected pulse received back)
         while GPIO.input(echo_pin) == 1:
             if time.time() > deadline:
                 return 999.0
         t_end = time.time()
 
-        # Speed of sound: 340 m/s → distance in cm
-        return (t_end - t_start) * 340 * 100 / 2
+        dist = (t_end - t_start) * 340 * 100 / 2  # speed of sound → cm
+
+        # Reject physically impossible readings (noise / ringing artefact)
+        if dist < _MIN_VALID_CM:
+            return 999.0
+        return dist
     except Exception:
         return 999.0
 
 def _read_distance_avg(trig_pin, echo_pin, samples=5):
     """
     Average multiple readings to reduce sensor noise.
-    Uses median filtering — discards the highest outlier reading
-    before averaging, which helps reject false short-range spikes.
-    Increased to 5 samples for smoother, more reliable readings.
+    Drops the single highest AND lowest reading (trimmed mean) to
+    reject both reflection spikes and false-short noise pulses.
     """
     readings = []
     for _ in range(samples):
         d = _read_distance(trig_pin, echo_pin)
         if d < 999.0:
             readings.append(d)
-        time.sleep(0.008)  # slightly longer inter-sample delay for HC-SR04 stability
+        time.sleep(0.01)              # 10ms between samples — HC-SR04 needs settling time
     if not readings:
         return 999.0
-    # Drop the single highest reading to filter out reflection spikes
-    if len(readings) > 2:
+    # Trimmed mean: drop highest AND lowest to filter outliers in both directions
+    if len(readings) > 3:
         readings.remove(max(readings))
+        readings.remove(min(readings))
+    elif len(readings) > 2:
+        readings.remove(max(readings))  # at least drop the high spike
     return sum(readings) / len(readings)
 
 def _zone_label(dist_cm):
@@ -481,8 +495,16 @@ def nav_loop():
             continue
 
         # --- Read sensors ---
+        # CRITICAL: Fire each sensor sequentially with a 60ms gap.
+        # HC-SR04 operates at 40kHz ultrasound — if two sensors fire within
+        # ~30ms of each other, the second sensor picks up the first sensor's
+        # reflected echo as its own return pulse, causing totally wrong readings.
+        # 60ms gap ensures the ultrasonic burst from one sensor has fully
+        # dissipated before the next sensor fires.
         front = _read_distance_avg(US_FRONT_TRIG, US_FRONT_ECHO)
+        time.sleep(0.06)              # 60ms inter-sensor gap — prevents crosstalk
         left  = _read_distance_avg(US_LEFT_TRIG,  US_LEFT_ECHO)
+        time.sleep(0.06)              # 60ms inter-sensor gap
         right = _read_distance_avg(US_RIGHT_TRIG, US_RIGHT_ECHO)
 
         now = time.time()
