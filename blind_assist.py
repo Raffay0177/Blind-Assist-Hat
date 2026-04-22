@@ -345,18 +345,30 @@ def _read_distance(trig_pin, echo_pin, timeout_s=0.04):
     except Exception:
         return 999.0
 
-def _read_distance_avg(trig_pin, echo_pin, samples=5):
+# Label used to identify sensor in terminal debug output
+_SENSOR_LABELS = {}
+
+def _read_distance_avg(trig_pin, echo_pin, samples=5, label=""):
     """
     Average multiple readings to reduce sensor noise.
     Drops the single highest AND lowest reading (trimmed mean) to
     reject both reflection spikes and false-short noise pulses.
+    Prints every raw sample to terminal so you can see exactly what
+    the sensor is reporting in real time.
     """
     readings = []
-    for _ in range(samples):
+    raw_log = []
+    for i in range(samples):
         d = _read_distance(trig_pin, echo_pin)
+        raw = f"{d:6.1f}" if d < 999.0 else " NONE "
+        raw_log.append(raw)
         if d < 999.0:
             readings.append(d)
-        time.sleep(0.01)              # 10ms between samples — HC-SR04 needs settling time
+        time.sleep(0.012)             # 12ms between samples — HC-SR04 settling time
+
+    # Print every raw sample so you can see sensor behaviour live
+    print(f"  [{label:5s}] raw: {' | '.join(raw_log)}")
+
     if not readings:
         return 999.0
     # Trimmed mean: drop highest AND lowest to filter outliers in both directions
@@ -365,7 +377,9 @@ def _read_distance_avg(trig_pin, echo_pin, samples=5):
         readings.remove(min(readings))
     elif len(readings) > 2:
         readings.remove(max(readings))  # at least drop the high spike
-    return sum(readings) / len(readings)
+    avg = sum(readings) / len(readings)
+    print(f"  [{label:5s}] avg: {avg:6.1f} cm  zone={_zone_label(avg).upper()}")
+    return avg
 
 def _zone_label(dist_cm):
     """Return a human-readable proximity zone for a distance."""
@@ -501,25 +515,29 @@ def nav_loop():
         # reflected echo as its own return pulse, causing totally wrong readings.
         # 60ms gap ensures the ultrasonic burst from one sensor has fully
         # dissipated before the next sensor fires.
-        front = _read_distance_avg(US_FRONT_TRIG, US_FRONT_ECHO)
-        time.sleep(0.06)              # 60ms inter-sensor gap — prevents crosstalk
-        left  = _read_distance_avg(US_LEFT_TRIG,  US_LEFT_ECHO)
-        time.sleep(0.06)              # 60ms inter-sensor gap
-        right = _read_distance_avg(US_RIGHT_TRIG, US_RIGHT_ECHO)
+        print("  ─── Sensor Sweep ─────────────────────────────")
+        front = _read_distance_avg(US_FRONT_TRIG, US_FRONT_ECHO, label="FRONT")
+        time.sleep(0.10)              # 100ms gap — ensures front pulse fully dissipates
+        left  = _read_distance_avg(US_LEFT_TRIG,  US_LEFT_ECHO,  label="LEFT ")
+        time.sleep(0.10)              # 100ms gap
+        right = _read_distance_avg(US_RIGHT_TRIG, US_RIGHT_ECHO, label="RIGHT")
 
         now = time.time()
         min_dist = min(front, left, right)
         overall_zone = _zone_label(min_dist)
 
-        # Determine closest direction label
-        if min_dist == front: direction = "Front"
-        elif min_dist == left: direction = "Left"
-        else: direction = "Right"
+        # Determine closest direction — use explicit <= comparisons, NOT ==
+        # Float equality (==) is unreliable and was causing wrong direction picks
+        if front <= left and front <= right:
+            direction = "Front"
+        elif left <= right:
+            direction = "Left"
+        else:
+            direction = "Right"
 
         print(
-            f"  NAV | F:{front:5.0f}cm  L:{left:5.0f}cm  R:{right:5.0f}cm"
-            f"  → {direction} ({overall_zone.upper()})        ",
-            end="\r"
+            f"  ──> SUMMARY | F:{front:6.1f}cm  L:{left:6.1f}cm  R:{right:6.1f}cm"
+            f"  →  {direction} is closest  ({overall_zone.upper()})"
         )
 
         # ── CLEAR PATH ───────────────────────────────────────────────────────
